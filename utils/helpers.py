@@ -42,10 +42,8 @@ class EmailThread(threading.Thread):
         threading.Thread.__init__(self)
         
     def run(self) -> None:
-        try:
-            self.email.send()  
-        except Exception:
-            pass 
+        with contextlib.suppress(Exception):
+            self.email.send() 
 
 class UserRelatedHelper:
     
@@ -102,18 +100,11 @@ class ForgotPasswordRequestToken(GenericAPIView):
         clear_expired(now_minus_expiry_time)
 
         # find a user by email address (case insensitive search)
-        users = User.objects.filter(**{'{}__iexact'.format(get_password_reset_lookup_field()): email})
+        users = User.objects.filter(
+            **{f'{get_password_reset_lookup_field()}__iexact': email}
+        )
 
-        active_user_found = False
-
-        # iterate over all users and check if there is any user that is active
-        # also check whether the password can be changed (is useable), as there could be users that are not allowed
-        # to change their password (e.g., LDAP user)
-        for user in users:
-            if user.eligible_for_reset():
-                active_user_found = True
-                break
-
+        active_user_found = any(user.eligible_for_reset() for user in users)
         # No active user found, raise a validation error
         # but not if DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE == True
         if not active_user_found and not getattr(settings, 'DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE', False):
@@ -126,7 +117,7 @@ class ForgotPasswordRequestToken(GenericAPIView):
         # and create a Reset Password Token and send a signal with the created token
         for user in users:
             if user.eligible_for_reset() and \
-                    _unicode_ci_compare(email, getattr(user, get_password_reset_lookup_field())):
+                        _unicode_ci_compare(email, getattr(user, get_password_reset_lookup_field())):
                 # define the token as none for now
                 token = None
 
@@ -149,31 +140,33 @@ class ForgotPasswordRequestToken(GenericAPIView):
 
 
 def image_upload(files: list):
+    desired_height = 100  # Edit to add your desired height in pixels
     # opening the uploaded image 
-    
+
     for image_file in files:
         im = Image.open(image_file)
         output = BytesIO()
-        
+
         # resize or modify the image to fit aspect ratio
         original_width, original_height = im.size
         aspect_ratio = round(original_width / original_height)
-        desired_height = 100  # Edit to add your desired height in pixels
         desired_width = desired_height * aspect_ratio
         im = im.resize((desired_width, desired_height))  # resize the image
-        
+
         # after modification, save it to the output 
         if im.mode in ("RGBA", "P"):
             im = im.convert("RGB")
         im.save(output, format='JPEG', quality=90)
         output.seek(0)
-        
-        # change the imagefield value to be the newley modifed image value
-        image_file = InMemoryUploadedFile(
-                                output, 'ImageField', "%s.jpg" % image_file.name.split('.')[0], 
-                                'image/jpeg', sys.getsizeof(output), None
-                                )
-        yield image_file
+
+        yield InMemoryUploadedFile(
+            output,
+            'ImageField',
+            f"{image_file.name.split('.')[0]}.jpg",
+            'image/jpeg',
+            sys.getsizeof(output),
+            None,
+        )
         
         
 

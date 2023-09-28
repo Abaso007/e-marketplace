@@ -27,7 +27,6 @@ def token_generator(request, length=30, chars=UNICODE_ASCII_CHARACTER_SET):
 
     expires_in = getattr(settings, 'OAUTH2_PROVIDER')['ACCESS_TOKEN_EXPIRE_SECONDS']
     exp = calendar.timegm((datetime.utcnow() + timedelta(seconds=expires_in)).utctimetuple())
-    
-    jwtted_token = jwt.encode({'token': token, 'exp': exp}, secret, algorithm='HS256')
-    return jwtted_token
+
+    return jwt.encode({'token': token, 'exp': exp}, secret, algorithm='HS256')
     

@@ -5,9 +5,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         
         # Allow full access to only verified users.
-        if request.user.is_verified:
-            return True 
-        return False 
+        return bool(request.user.is_verified) 
     
     def has_object_permission(self, request, view, obj):
         # Allow Read-Only access to all users
