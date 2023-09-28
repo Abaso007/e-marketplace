@@ -26,13 +26,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data: Dict[str, Any]):
         email = validated_data["email"]
         confirm_account = get_user_model().objects.filter(email=email)
-        
+
         # Check if we have a user with the entered email address
         if confirm_account.exists():
             raise serializers.ValidationError("An account already exists with this email")
-        # If not, then create the user with the email and the rest of the validated data
-        new_account = get_user_model().objects.create_user(**validated_data)
-        return new_account
+        return get_user_model().objects.create_user(**validated_data)
     
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

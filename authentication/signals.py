@@ -35,10 +35,8 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
         'current_user': reset_password_token.user,
         'first_name': reset_password_token.user.first_name,
         'email': reset_password_token.user.email,
-        'reset_password_url': "{}?token={}".format(
-                    instance.request.build_absolute_uri(reverse('authentication:reset-password-confirm')),
-                    reset_password_token.key)
-        }
+        'reset_password_url': f"{instance.request.build_absolute_uri(reverse('authentication:reset-password-confirm'))}?token={reset_password_token.key}",
+    }
     # render email html
     message = render_to_string('authentication/user_reset_password.html', context)
     helper = UserRelatedHelper(reset_password_token.user)
@@ -53,10 +51,8 @@ def forgot_password_reset_token_created(sender, instance, reset_password_token, 
         'current_user': reset_password_token.user,
         'first_name': reset_password_token.user.first_name,
         'email': reset_password_token.user.email,
-        'forgot_password_url': "{}?token={}".format(
-                    instance.request.build_absolute_uri(reverse('authentication:forgot-password-confirm')),
-                    reset_password_token.key)
-        }
+        'forgot_password_url': f"{instance.request.build_absolute_uri(reverse('authentication:forgot-password-confirm'))}?token={reset_password_token.key}",
+    }
     # render email html
     message = render_to_string('authentication/user_forgot_password.html', context)
     helper = UserRelatedHelper(reset_password_token.user)
